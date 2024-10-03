@@ -1,2 +1,3 @@
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1723301941849598"
      crossorigin="anonymous"></script>
+<meta name="google-site-verification" content="j59aqUDnd4jJOC55p-sy2Mtqfdr-V_Urh6ZjfoaahFM" />
