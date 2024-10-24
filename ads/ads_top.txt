@@ -1,10 +1,1 @@
-<script type="text/javascript">
-	atOptions = {
-		'key' : '224e41cea270ea186cb0d4eac007ff73',
-		'format' : 'iframe',
-		'height' : 250,
-		'width' : 300,
-		'params' : {}
-	};
-</script>
-<script type="text/javascript" src="//www.topcpmcreativeformat.com/224e41cea270ea186cb0d4eac007ff73/invoke.js"></script>
+
