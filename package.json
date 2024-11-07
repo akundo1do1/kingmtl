@@ -1,6 +1,6 @@
 {
   "name": "cdom-dev",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Growth your business",
   "main": "functions/core.js",
   "scripts": {
@@ -14,9 +14,9 @@
     "express": "^4.18.2",
     "node-cache": "^5.1.2",
     "serverless-http": "^3.1.0",
-    "unirest": "^0.6.0"
+    "unirest": "^0.6.0",
+    "axios": "^1.6.0"
   },
   "devDependencies": {
-    "netlify-lambda": "^1.0.0"
+    "@netlify/functions": "^0.20.0"
   }
-}
