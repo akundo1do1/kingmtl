@@ -1,4 +1,5 @@
 [build]
+node_version = "22.11.0"
   command = "npm run build"
   functions = "functions"
 
