@@ -8,9 +8,7 @@ const { HttpProxyAgent } = require('https-proxy-agent');
 
 // Define a list of proxies (Replace with your actual proxy list)
 const proxies = [
-  'http://148.72.168.81:30127',
-  'http://128.199.202.122:8080',
-  'http://20.111.54.16:8123',
+  'http://ariaatr.com:8080',
   // Add more proxies as needed
 ];
 
