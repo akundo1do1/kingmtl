@@ -2,6 +2,28 @@ const { url, max_iter, max_retries } = require("./constants");
 const { sleep, curlContent } = require("./utils");
 const NC = require("node-cache");
 const Cache = new NC({ checkperiod: 0 });
+const axios = require('axios');
+const HttpsProxyAgent = require('https-proxy-agent');
+
+// Proxy URL
+const proxyUrl = 'http://148.72.168.81:30127'; // Ganti dengan proxy yang Anda gunakan
+const agent = new HttpsProxyAgent(proxyUrl);
+
+// Fungsi curlContent dengan proxy
+const curlContent = async (url) => {
+  try {
+    const response = await axios.get(url, {
+      httpsAgent: agent,  // Menggunakan agent proxy
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching content:", error.message);
+    throw error;  // Menyebarkan error jika terjadi kesalahan
+  }
+};
 
 const getToken = async (query) => {
   let token = null;
