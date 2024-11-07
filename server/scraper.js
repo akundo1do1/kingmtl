@@ -3,22 +3,34 @@ const { sleep, curlContent } = require("./utils");
 const NC = require("node-cache");
 const Cache = new NC({ checkperiod: 0 });
 
-const axios = require('axios');
-const HttpsProxyAgent = require('https-proxy-agent'); // Pustaka untuk proxy
-const { max_iter, max_retries } = require("./constants");
-const { sleep } = require("./utils");
-const NC = require("node-cache");
-const Cache = new NC({ checkperiod: 0 });
+const getToken = async (query) => {
+  let token = null;
+  try {
+    let reqUrl = url + "?";
+    let params = new URLSearchParams({
+      q: query,
+      t: "h_",
+      iax: "images",
+      ia: "images",
+    }).toString();
+    // Menggunakan curlContent yang sudah dimodifikasi
+    let res = await curlContent(reqUrl + params);
 
-// Tentukan proxy Anda jika menggunakan proxy
-const proxyUrl = 'http://proxy-server.com:8080'; // Ganti dengan URL proxy yang Anda gunakan
-const agent = new HttpsProxyAgent(proxyUrl); // Membuat agent untuk proxy
+    token = res.match(/vqd=([\d-]+)\&/)[1];
+  } catch (error) {
+    console.error('Error getting token:', error);
+  }
 
-// Fungsi untuk mendapatkan gambar dari Yandex
+  return new Promise((resolve, reject) => {
+    if (!token) reject("Failed to get token");
+    resolve(token);
+  });
+};
+
 const getImages = async (query, moderate, retries, iterations) => {
-  const reqUrl = 'https://yandex.com/images/search';  // URL pencarian gambar Yandex
+  let reqUrl = url + "i.js?";
   let keywords = query;
-  let p = moderate ? 1 : -1; // default moderate false
+  let p = moderate ? 1 : -1; // by default moderate false
   let attempt = 0;
   if (!retries) retries = max_retries; // default to max if none provided
   if (!iterations) iterations = max_iter; // default to max if none provided
@@ -28,12 +40,15 @@ const getImages = async (query, moderate, retries, iterations) => {
   try {
     let dataCache = Cache.get("images::" + keywords);
     if (dataCache == undefined) {
-      // Persiapkan parameter untuk permintaan pencarian gambar
+      let token = await getToken(keywords);
+
       let params = new URLSearchParams({
-        text: keywords,  // Kata kunci pencarian
-        rpt: 'image',    // Menentukan pencarian gambar
-        l10n: 'en',      // Mengatur bahasa
-        p: p,            // Moderate (1 untuk moderasi, -1 untuk tidak)
+        l: "wt-wt",
+        o: "json",
+        q: keywords,
+        vqd: token,
+        f: ",,,",
+        p: "" + p,
       }).toString();
 
       let data = null;
@@ -42,52 +57,36 @@ const getImages = async (query, moderate, retries, iterations) => {
       while (itr < iterations) {
         while (true) {
           try {
-            // Lakukan permintaan pencarian menggunakan Axios dan proxy
-            let response = await axios.get(reqUrl + "?" + params, {
-              httpsAgent: agent, // Menetapkan agent proxy
-              headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36', // Set User-Agent agar tidak diblokir
-              },
-            });
+            let response = await curlContent(reqUrl + params);
 
-            // Ambil data gambar dari respons HTML atau JSON
-            data = response.data;
-            // Biasanya, Yandex memberikan gambar dalam format JSON atau dalam konten HTML, jadi kita perlu mengekstraknya
-            let images = [];
-            const imageMatches = data.match(/"thumb":"(.*?)"/g);  // Pencocokan gambar berdasarkan format JSON atau HTML Yandex
-            if (imageMatches) {
-              images = imageMatches.map(match => {
-                return match.replace(/"thumb":"(.*?)"/, '$1');
-              });
-            }
-            if (images.length === 0) throw "No results";
-            data = { results: images };
+            data = response;
+            data = await JSON.parse(data);
+            if (!data.results) throw "No results";
             break;
           } catch (error) {
             attempt += 1;
             if (attempt > retries) {
-              return new Promise((resolve) => {
+              return new Promise((resolve, reject) => {
                 Cache.set("images::" + keywords, results);
                 resolve(results);
               });
             }
-            await sleep(5000); // Delay untuk retry
+            await sleep(5000);
             continue;
           }
         }
 
-        // Menambahkan hasil gambar ke list
         results = [...results, ...data.results];
-        // Menyimpan data ke cache
+        for (let i = 0; i < results.length; i++) {
+          results[i]["title"] = results[i]["title"].replace(/\.+/gi, "");
+        }
         Cache.set("images::" + keywords, results);
-
-        // Jika tidak ada data selanjutnya, berhenti
-        if (!data.results || data.results.length === 0) {
-          return new Promise((resolve) => {
+        if (!data.next) {
+          return new Promise((resolve, reject) => {
             resolve(results);
           });
         }
-
+        reqUrl = url + data["next"];
         itr += 1;
         attempt = 0;
       }
@@ -95,14 +94,11 @@ const getImages = async (query, moderate, retries, iterations) => {
       results = dataCache;
     }
   } catch (error) {
-    console.error("Error di getImages:", error.message);
+    console.error('Error getting images:', error);
   }
-
   Cache.close();
   return results;
 };
-
-
 
 const getSentences = async (query) => {
   let reqUrl = "https://html.duckduckgo.com/html/?";
