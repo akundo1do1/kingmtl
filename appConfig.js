@@ -1,9 +1,9 @@
 module.exports = {
-  title: "KingMTL.com",
-  tagline: "KingMTL Contents Article & Image",
-  description: "KingMTL Contents Article & Image",
+  title: "All Image",
+  tagline: "All Article & Image",
+  description: "All Article & Image",
   keywords: "cdom,cdom agc,cdom blog",
-  author: "KingMTL.com",
+  author: "All.com",
   favicon: "https://pugjs.org/images/favicon.ico",
   imageCount: 10,
   removeBadWords: "porn,nude,sex",

@@ -17,6 +17,6 @@
     "unirest": "^0.6.0"
   },
   "devDependencies": {
-    "netlify-lambda": "^1.0.0"
+    "netlify-lambda": "^0.4.0"
   }
 }

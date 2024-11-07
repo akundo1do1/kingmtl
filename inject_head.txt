@@ -1,4 +1,0 @@
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1759463442706007"
-     crossorigin="anonymous"></script>
-<meta name="google-adsense-account" content="ca-pub-1759463442706007">
-<meta name="google-site-verification" content="j59aqUDnd4jJOC55p-sy2Mtqfdr-V_Urh6ZjfoaahFM" />

@@ -1,5 +1,4 @@
 [build]
-node_version = "20.18.0"
   command = "npm run build"
   functions = "functions"
 
