@@ -19,6 +19,6 @@
     "https-proxy-agent": "^5.0.0"
   },
   "devDependencies": {
-    "netlify-lambda": "^1.0.0"
+    "netlify-lambda": "^1.4.0"
   }
 }
