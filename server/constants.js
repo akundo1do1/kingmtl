@@ -1,6 +1,6 @@
 module.exports = {
   hash: "38d233dd66f2c162d2a9e173da08c977",
-  url: "https://duckduckgo.com/",
+  url: "https://bing.com/",
   headers: {
     dnt: "1",
     "accept-encoding": "gzip, deflate, sdch",
