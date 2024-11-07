@@ -1,10 +1,8 @@
-const axios = require('axios'); // Menambahkan axios
 const { url, max_iter, max_retries } = require("./constants");
-const { sleep } = require("./utils");
+const { sleep, curlContent } = require("./utils");
 const NC = require("node-cache");
 const Cache = new NC({ checkperiod: 0 });
 
-// Fungsi untuk mendapatkan token
 const getToken = async (query) => {
   let token = null;
   try {
@@ -15,13 +13,10 @@ const getToken = async (query) => {
       iax: "images",
       ia: "images",
     }).toString();
+    let res = await curlContent(reqUrl + params);
 
-    // Menggunakan axios untuk permintaan HTTP
-    const res = await axios.get(reqUrl + params);
-    token = res.data.match(/vqd=([\d-]+)\&/)[1];
-  } catch (error) {
-    console.error('Error getting token:', error);
-  }
+    token = res.match(/vqd=([\d-]+)\&/)[1];
+  } catch (error) {}
 
   return new Promise((resolve, reject) => {
     if (!token) reject("Failed to get token");
@@ -29,14 +24,13 @@ const getToken = async (query) => {
   });
 };
 
-// Fungsi untuk mendapatkan gambar
 const getImages = async (query, moderate, retries, iterations) => {
   let reqUrl = url + "i.js?";
   let keywords = query;
-  let p = moderate ? 1 : -1;
+  let p = moderate ? 1 : -1; // by default moderate false
   let attempt = 0;
-  if (!retries) retries = max_retries;
-  if (!iterations) iterations = max_iter;
+  if (!retries) retries = max_retries; // default to max if none provided
+  if (!iterations) iterations = max_iter; // default to max if none provided
 
   let results = [];
 
@@ -60,15 +54,16 @@ const getImages = async (query, moderate, retries, iterations) => {
       while (itr < iterations) {
         while (true) {
           try {
-            // Menggunakan axios untuk permintaan HTTP
-            const response = await axios.get(reqUrl + params);
-            data = response.data;
+            let response = await curlContent(reqUrl + params);
+
+            data = response;
+            data = await JSON.parse(data);
             if (!data.results) throw "No results";
             break;
           } catch (error) {
             attempt += 1;
             if (attempt > retries) {
-              return new Promise((resolve) => {
+              return new Promise((resolve, reject) => {
                 Cache.set("images::" + keywords, results);
                 resolve(results);
               });
@@ -84,7 +79,7 @@ const getImages = async (query, moderate, retries, iterations) => {
         }
         Cache.set("images::" + keywords, results);
         if (!data.next) {
-          return new Promise((resolve) => {
+          return new Promise((resolve, reject) => {
             resolve(results);
           });
         }
@@ -95,14 +90,11 @@ const getImages = async (query, moderate, retries, iterations) => {
     } else {
       results = dataCache;
     }
-  } catch (error) {
-    console.error('Error getting images:', error);
-  }
+  } catch (error) {}
   Cache.close();
   return results;
 };
 
-// Fungsi untuk mendapatkan kalimat (text)
 const getSentences = async (query) => {
   let reqUrl = "https://html.duckduckgo.com/html/?";
   try {
@@ -112,22 +104,19 @@ const getSentences = async (query) => {
       let params = new URLSearchParams({
         q: query,
       }).toString();
-
-      // Menggunakan axios untuk permintaan HTTP
-      const response = await axios.get(reqUrl + params);
-      if (response.data !== "err") {
-        let responseText = response.data.match(
+      let response = await curlContent(reqUrl + params);
+      if (response != "err") {
+        response = response.match(
           /(?<=\<a\sclass="result__snippet.*?\>).*?(?=\<\/a\>)/g
         );
-        if (responseText != null) {
-          responseText.forEach((e) => {
+        if (response != null) {
+          response.forEach((e) => {
             e = e.replace(/\.+/g, ".");
             e = removeCommonwords(e);
             results.push(e);
           });
         }
       }
-
       if (results.length == 0) {
         results[0] = `Hello, in this particular article you will provide several interesting pictures of <b>${query}</b>. We found many exciting and extraordinary <b>${query}</b> pictures that can be tips, input and information intended for you. In addition to be able to the <b>${query}</b> main picture, we also collect some other related images. Find typically the latest and best <b>${query}</b> images here that many of us get selected from plenty of other images.`;
         results[1] = `We all hope you can get actually looking for concerning <b>${query}</b> here. There is usually a large selection involving interesting image ideas that will can provide information in order to you. You can get the pictures here regarding free and save these people to be used because reference material or employed as collection images with regard to personal use. Our imaginative team provides large dimensions images with high image resolution or HD.`;
@@ -141,13 +130,11 @@ const getSentences = async (query) => {
     } else {
       results = dataCache;
     }
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       Cache.close();
       resolve(results);
     });
-  } catch (e) {
-    console.error('Error getting sentences:', e);
-  }
+  } catch (e) {}
 };
 
 const removeCommonwords = (str) => {
