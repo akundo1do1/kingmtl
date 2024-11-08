@@ -5,7 +5,7 @@
   "main": "functions/core.js",
   "scripts": {
     "start": "node index",
-    "build": "netlify-lambda build functions"
+    "build": "netlify-lambda build server"
   },
   "dependencies": {
     "express": "^4.18.2",
