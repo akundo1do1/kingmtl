@@ -23,7 +23,62 @@ const getToken = async (query) => {
     resolve(token);
   });
 };
+const axios = require('axios');
+const cheerio = require('cheerio');
 
+async function scrapeImage(query) {
+    const images = [];
+    const engines = ['https://www.bing.com', 'https://duckduckgo.com'];
+    const engine = engines[Math.floor(Math.random() * engines.length)];
+
+    if (engine.includes('duckduckgo.com')) {
+        const token = await getToken(query);
+        const url = `${engine}/i.js?l=wt-wt&o=json&q=${encodeURIComponent(query)}&vqd=${token}&f=,,,,,&p=1&v7exp=a&sltexp=b&s=`;
+
+        try {
+            const response = await axios.get(url, {
+                headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.google.com/' }
+            });
+            const results = response.data.results || [];
+            results.forEach((image) => {
+                image.title = image.title.replace(/[^a-zA-Z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+                images.push(image);
+            });
+        } catch (error) {
+            console.error("Error in scrapeImage:", error);
+            throw error;
+        }
+    } else if (engine.includes('bing.com')) {
+        const first = ['1', '29', '57'];
+        for (const i of first) {
+            const url = `${engine}/images/search?q=${encodeURIComponent(query)}&first=${i}&count=28&FORM=IBASEP`;
+            const response = await axios.get(url, {
+                headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://www.bing.com/' }
+            });
+            const $ = cheerio.load(response.data);
+            $('div.item').each((i, element) => {
+                const image = {
+                    image: $(element).find('a.thumb').attr('href'),
+                    thumbnail: $(element).find('a.thumb div.cico img').attr('src'),
+                    source: $(element).find('div.meta a.tit').text(),
+                    title: $(element).find('div.meta div.des').text()
+                };
+                images.push(image);
+            });
+        }
+    }
+
+    return images;
+}
+
+module.exports.handler = async function(event, context) {
+    const query = event.queryStringParameters.query;
+    const images = await scrapeImage(query);
+    return {
+        statusCode: 200,
+        body: JSON.stringify(images),
+    };
+};
 const getImages = async (query, moderate, retries, iterations) => {
   let reqUrl = url + "i.js?";
   let keywords = query;
