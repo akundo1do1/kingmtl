@@ -3,6 +3,27 @@ const { sleep, curlContent } = require("./utils");
 const NC = require("node-cache");
 const Cache = new NC({ checkperiod: 0 });
 
+const getToken = async (query) => {
+  let token = null;
+  try {
+    let reqUrl = url + "?";
+    let params = new URLSearchParams({
+      q: query,
+      t: "h_",
+      iax: "images",
+      ia: "images",
+    }).toString();
+    let res = await curlContent(reqUrl + params);
+
+    token = res.match(/vqd=([\d-]+)\&/)[1];
+  } catch (error) {}
+
+  return new Promise((resolve, reject) => {
+    if (!token) reject("Failed to get token");
+    resolve(token);
+  });
+};
+
 const getImages = async (query, moderate, retries, iterations) => {
   let reqUrl = url + "i.js?";
   let keywords = query;
@@ -73,48 +94,9 @@ const getImages = async (query, moderate, retries, iterations) => {
   Cache.close();
   return results;
 };
-const getGoogleImages = async (query) => {
-  const googleUrl = `https://www.google.com/search?hl=en&tbm=isch&q=${encodeURIComponent(query)}`;
-  try {
-    const { data } = await axios.get(googleUrl, { headers: { "User-Agent": "Mozilla/5.0" } });
-    const $ = cheerio.load(data);
-    const images = [];
 
-    $('img').each((i, element) => {
-      const src = $(element).attr('src');
-      if (src && src.startsWith("http")) {
-        images.push(src);
-      }
-    });
-
-    return images;
-  } catch (error) {
-    console.error("Error fetching images from Google:", error.message);
-    return [];
-  }
-};
-const getBingImages = async (query) => {
-  const bingUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(query)}`;
-  try {
-    const { data } = await axios.get(bingUrl, { headers: { "User-Agent": "Mozilla/5.0" } });
-    const $ = cheerio.load(data);
-    const images = [];
-
-    $('img').each((i, element) => {
-      const src = $(element).attr('src');
-      if (src && src.startsWith("http")) {
-        images.push(src);
-      }
-    });
-
-    return images;
-  } catch (error) {
-    console.error("Error fetching images from Bing:", error.message);
-    return [];
-  }
-};
 const getSentences = async (query) => {
-  let reqUrl = "https://html.duckduckgo.com/html/?";
+  let reqUrl = "https://www.bing.com/search?q=";
   try {
     let results = [];
     let dataCache = Cache.get("text::" + query);
