@@ -3,27 +3,6 @@ const { sleep, curlContent } = require("./utils");
 const NC = require("node-cache");
 const Cache = new NC({ checkperiod: 0 });
 
-const getToken = async (query) => {
-  let token = null;
-  try {
-    let reqUrl = url + "?";
-    let params = new URLSearchParams({
-      q: query,
-      t: "h_",
-      iax: "images",
-      ia: "images",
-    }).toString();
-    let res = await curlContent(reqUrl + params);
-
-    token = res.match(/vqd=([\d-]+)\&/)[1];
-  } catch (error) {}
-
-  return new Promise((resolve, reject) => {
-    if (!token) reject("Failed to get token");
-    resolve(token);
-  });
-};
-
 const getImages = async (query, moderate, retries, iterations) => {
   let reqUrl = url + "i.js?";
   let keywords = query;
