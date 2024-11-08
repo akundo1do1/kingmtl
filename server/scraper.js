@@ -96,7 +96,7 @@ const getImages = async (query, moderate, retries, iterations) => {
 };
 
 const getSentences = async (query) => {
-  let reqUrl = "https://www.bing.com/search?q=";
+  let reqUrl = "https://html.duckduckgo.com/html/?";
   try {
     let results = [];
     let dataCache = Cache.get("text::" + query);
