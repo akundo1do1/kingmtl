@@ -2,7 +2,51 @@ const { url, max_iter, max_retries } = require("./constants");
 const { sleep, curlContent } = require("./utils");
 const NC = require("node-cache");
 const Cache = new NC({ checkperiod: 0 });
+const axios = require("axios");
+const cheerio = require("cheerio");
 
+// Fungsi untuk mengambil gambar dari Google
+const getGoogleImages = async (query) => {
+  const googleUrl = `https://www.google.com/search?hl=en&tbm=isch&q=${encodeURIComponent(query)}`;
+  try {
+    const { data } = await axios.get(googleUrl, { headers: { "User-Agent": "Mozilla/5.0" } });
+    const $ = cheerio.load(data);
+    const images = [];
+    
+    $('img').each((i, element) => {
+      const src = $(element).attr('src');
+      if (src && src.startsWith("http")) {
+        images.push(src);
+      }
+    });
+    
+    return images;
+  } catch (error) {
+    console.error("Error fetching images from Google:", error);
+    return [];
+  }
+};
+// Fungsi untuk mengambil gambar dari Bing
+const getBingImages = async (query) => {
+  const bingUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(query)}`;
+  try {
+    const { data } = await axios.get(bingUrl, { headers: { "User-Agent": "Mozilla/5.0" } });
+    const $ = cheerio.load(data);
+    const images = [];
+    
+    $('img').each((i, element) => {
+      const src = $(element).attr('src');
+      if (src && src.startsWith("http")) {
+        images.push(src);
+      }
+    });
+    
+    return images;
+  } catch (error) {
+    console.error("Error fetching images from Bing:", error);
+    return [];
+  }
+};
 const getToken = async (query) => {
   let token = null;
   try {
@@ -93,6 +137,33 @@ const getImages = async (query, moderate, retries, iterations) => {
   } catch (error) {}
   Cache.close();
   return results;
+};
+const getImages = async (query, moderate, retries, iterations) => {
+  let results = [];
+
+  try {
+    // Cek cache dulu
+    let dataCache = Cache.get("images::" + query);
+    if (dataCache == undefined) {
+      let googleImages = await getGoogleImages(query);
+      let bingImages = await getBingImages(query);
+      let otherImages = []; // Placeholder untuk gambar dari sumber lain jika diperlukan
+
+      results = [...googleImages, ...bingImages, ...otherImages];
+
+      // Hapus duplikat dan batasi hasil jika perlu
+      results = [...new Set(results)];
+
+      Cache.set("images::" + query, results);
+    } else {
+      results = dataCache;
+    }
+
+    return results;
+  } catch (error) {
+    console.error("Error fetching images:", error);
+    return [];
+  }
 };
 
 const getSentences = async (query) => {
